@@ -32,7 +32,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Usar la ruta absoluta al sdkmanager preinstalado en el servidor
+      # Solución 1: Aceptar licencias con ruta absoluta
       - name: Accept Android Licenses and Install NDK
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
@@ -84,13 +84,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Solución 2: Enlace actualizado de apktool desde GitHub
       - name: Install apktool + dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq openjdk-17-jdk zipalign apksigner python3
 
           # Install apktool latest
-          wget -q https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar \
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar \
                -O /usr/local/bin/apktool.jar
           wget -q https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool \
                -O /usr/local/bin/apktool
@@ -120,3 +121,38 @@ jobs:
           name: crystal_guideline_patched
           path: dist/crystal_patched_signed.apk
           retention-days: 14
+
+  # ─── Job 3: Release (on version tag) ─────────────────────────
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build-native
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download .so
+        uses: actions/download-artifact@v4
+        with:
+          name: libcrystal_guideline-arm64
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: libcrystal_guideline.so
+          name: "Crystal Guideline ${{ github.ref_name }}"
+          body: |
+            ## Crystal Guideline ${{ github.ref_name }}
+            
+            ### Files
+            - `libcrystal_guideline.so` — ARM64 native library (inject via patch.sh)
+            
+            ### Usage
+            ```bash
+            # 1. Download this .so to dist/
+            # 2. Run patch.sh with your 8BP APK:
+            ./patch.sh 8ballpool.apk
+            ```
+            
+            ### Modes
+            - **Ghost Ball** — shows ghost ball + tangent predictor
+            - **Line Extender** — extends shot line with wall bounces (up to 3)
