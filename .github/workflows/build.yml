@@ -32,18 +32,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Solución: Aceptar licencias manualmente sin usar setup-android@v3
+      # Usar la ruta absoluta al sdkmanager preinstalado en el servidor
       - name: Accept Android Licenses and Install NDK
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "ndk;${{ env.NDK_VERSION }}"
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;${{ env.NDK_VERSION }}"
 
       - name: Install Ninja
         run: sudo apt-get install -y ninja-build
 
       - name: Configure cmake
         run: |
-          NDK_PATH="$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}"
+          NDK_PATH="$ANDROID_HOME/ndk/${{ env.NDK_VERSION }}"
           cmake \
             -S jni/ \
             -B .build/ \
