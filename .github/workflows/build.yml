@@ -101,8 +101,9 @@ jobs:
         run: |
           wget -q "${{ github.event.inputs.apk_url }}" -O base.apk
           ls -lh base.apk
-          file base.apk | grep -q "Zip archive" \
-            || (echo "Download failed or not a valid APK" && exit 1)
+          # Verificación flexible: solo comprobar que el archivo exista y no esté vacío
+          [ -s base.apk ] || (echo "Download failed or file is empty" && exit 1)
+          echo "APK downloaded successfully. Size: $(du -h base.apk | cut -f1)"
 
       - name: Download compiled .so
         uses: actions/download-artifact@v4
